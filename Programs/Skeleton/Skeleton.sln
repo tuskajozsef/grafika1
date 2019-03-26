@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.438
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Skeleton", "Skeleton\Skeleton.vcxproj", "{8B83E48F-726D-48E2-93F3-06B9AEE4BF72}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{46ABA1D8-4C76-47CF-BDFF-62697FC6A566}"
+	ProjectSection(SolutionItems) = preProject
+		..\..\smoothtriangle.cpp = ..\..\smoothtriangle.cpp
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8B83E48F-726D-48E2-93F3-06B9AEE4BF72}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8B83E48F-726D-48E2-93F3-06B9AEE4BF72}.Debug|Win32.Build.0 = Debug|Win32
+		{8B83E48F-726D-48E2-93F3-06B9AEE4BF72}.Release|Win32.ActiveCfg = Release|Win32
+		{8B83E48F-726D-48E2-93F3-06B9AEE4BF72}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1EC8CDCF-52A2-4EAA-A720-2B64E80B2FDB}
+	EndGlobalSection
+EndGlobal
