@@ -1,5 +1,5 @@
-//=============================================================================================
-// Mintaprogram: Zöld háromszög. Ervenyes 2018. osztol.
+ï»¿//=============================================================================================
+// Mintaprogram: ZÃ¶ld hÃ¡romszÃ¶g. Ervenyes 2018. osztol.
 //
 // A beadott program csak ebben a fajlban lehet, a fajl 1 byte-os ASCII karaktereket tartalmazhat, BOM kihuzando.
 // Tilos:
@@ -39,10 +39,8 @@ using namespace std;
 const char * const vertexSource = R"(
 	#version 330				// Shader 3.3
 	precision highp float;		// normal floats, makes no difference on desktop computers
-
 	uniform mat4 MVP;			// uniform variable, the Model-View-Projection transformation matrix
 	layout(location = 0) in vec2 vp;	// Varying input: vp = vertex position is expected in attrib array 0
-
 	void main() {
 		gl_Position = vec4(vp.x, vp.y, 0, 1) * MVP;		// transform vp from modeling space to normalized device space
 	}
@@ -55,7 +53,6 @@ const char * const fragmentSource = R"(
 	
 	uniform vec4 color;		// uniform variable, the color of the primitive
 	out vec4 outColor;		// computed color of the current pixel
-
 	void main() {
 		outColor = color;	// computed color is the color of the primitive
 	}
@@ -72,16 +69,16 @@ public:
 
 	mat4 V() { // view matrix: translates the center to the origin
 		return mat4(1, 0, 0, 0,
-			        0, 1, 0, 0,
-			        0, 0, 1, 0,
-			     -wCx, -wCy, 0, 1);
+			0, 1, 0, 0,
+			0, 0, 1, 0,
+			-wCx, -wCy, 0, 1);
 	}
 
 	mat4 P() { // projection matrix: scales it to be a square of edge length 2
 		return mat4(2 / wWx, 0, 0, 0,
-			        0, 2 / wWy, 0, 0,
-			        0, 0, 1, 0,
-			           0, 0, 0, 1);
+			0, 2 / wWy, 0, 0,
+			0, 0, 1, 0,
+			0, 0, 0, 1);
 	}
 
 	mat4 Vinv() { // inverse view matrix
@@ -99,7 +96,7 @@ public:
 	}
 
 	void Animate(float t) {
-		wCx = 1000 * cosf(t);
+		wCx = 0;
 		wCy = 0;
 		wWx = 20;
 		wWy = 20;
@@ -134,7 +131,7 @@ class Curve {
 	unsigned int vaoAnimatedObject, vboAnimatedObject;
 	unsigned int vbo;
 
-	vec4 color=vec4(1,1,1,1);
+	vec4 color = vec4(1, 1, 1, 1);
 protected:
 	std::vector<vec4> wCtrlPoints;		// coordinates of control points
 public:
@@ -187,31 +184,73 @@ public:
 		color = col;
 	}
 
-	virtual vec4 r(float t) { return wCtrlPoints[0]; }
-	virtual float tStart() { return 0; }
-	virtual float tEnd() { return 1; }
+	virtual vec4 y(float x) { return wCtrlPoints[0]; }
+	virtual float xStart() { return 0; }
+	virtual float xEnd() { return 1; }
+
+	vec4 derivY(vec4 p0, vec4 v0, float x0,
+		vec4 p1, vec4 v1, float x1,
+		float x) {
+
+		vec4 a3 = (p0 - p1) / ((x1 - x0)*(x1 - x0)*(x1 - x0)) * 2 + (v1 + v0) / ((x1 - x0)*(x1 - x0));
+		vec4 a2 = (p1 - p0) / ((x1 - x0)*(x1 - x0)) * 3 - (v1 + v0 * 2) / (x1 - x0);
+		vec4 a1 = v0;
+
+		return (a3*(x - x1)*(x - x1) * 3 + a2 * (x - x1) * 2 + a1);
+	}
+
+	vec2 derivateY(float x) {
+		vec4 v0, v1;
+		for (int i = 0; i < wCtrlPoints.size() - 1; i++) {
+			if (i <= x && x <= i + 1) {
+				if (i == 0) {
+					v0 = 0;
+				}
+
+				else {
+					v0 = ((wCtrlPoints[i + 1] - wCtrlPoints[i])
+						+ (wCtrlPoints[i] - wCtrlPoints[i - 1])) * 0.5f;
+				}
+
+				if (i == wCtrlPoints.size() - 2) {
+					v1 = 0;
+				}
+
+				else
+					v1 = ((wCtrlPoints[i + 2] - wCtrlPoints[i + 1])
+						+ (wCtrlPoints[i + 1] - wCtrlPoints[i])) * 0.5f;
+
+				vec4 preResult = derivY(wCtrlPoints[i], v0, i, wCtrlPoints[i + 1], v1, i + 1, x);
+				vec2 result = vec2(preResult.x, preResult.y);
+				return result;
+			}
+		}
+
+	}
+
 
 	virtual void AddControlPoint(float cX, float cY) {
 		vec4 wVertex = vec4(cX, cY, 0, 1) * camera.Pinv() * camera.Vinv();
 		int i = 0;
 
-		if (wCtrlPoints.size() == 0) 
+		if (wCtrlPoints.size() == 0)
 			wCtrlPoints.push_back(wVertex);
 
 		else {
 			if (wCtrlPoints.size() == 1) {
-				if (wCtrlPoints[0].x < wVertex.x) 
-						wCtrlPoints.push_back(wVertex);
+				if (wCtrlPoints[0].x < wVertex.x)
+					wCtrlPoints.push_back(wVertex);
 
-				else 
+				else
 					wCtrlPoints.insert(wCtrlPoints.begin(), wVertex);
 			}
 
 			else {
-				for (i = 0; i < (signed int) wCtrlPoints.size() - 1 && wVertex.x > wCtrlPoints[i].x; i++) {}
+				for (i = 0; i < (signed int)wCtrlPoints.size() - 1 && wVertex.x > wCtrlPoints[i].x; i++) {}
 
-				if (i == wCtrlPoints.size()-1 && wVertex.x > wCtrlPoints[i].x)
+				if (i == wCtrlPoints.size() - 1 && wVertex.x > wCtrlPoints[i].x)
 					wCtrlPoints.push_back(wVertex);
+
 				else
 					wCtrlPoints.insert(wCtrlPoints.begin() + i, wVertex);
 			}
@@ -252,9 +291,13 @@ public:
 		if (wCtrlPoints.size() >= 2) {	// draw curve
 			std::vector<float> vertexData;
 			for (int i = 0; i < nTesselatedVertices; i++) {	// Tessellate
-				float tNormalized = (float)i / (nTesselatedVertices - 1);
-				float t = tStart() + (tEnd() - tStart()) * tNormalized;
-				vec4 wVertex = r(t);
+				float xNormalized = (float)i / (nTesselatedVertices - 1);
+				float x = xStart() + (xEnd() - xStart()) * xNormalized;
+				vec4 wVertex = y(x);
+				//printf("x: %f\n", x);
+				/*printf("y: %f\n", wVertex.y);
+				printf("z: %f\n", wVertex.z);
+				printf("w: %f\n\n", wVertex.w);*/
 				vertexData.push_back(wVertex.x);
 				vertexData.push_back(wVertex.y);
 			}
@@ -268,203 +311,224 @@ public:
 
 			glDrawArrays(GL_LINE_STRIP, 0, nTesselatedVertices);
 
+			//circle
+
+			//glutSwapBuffers();
+
 			if (animate&&animateable) {
 				// animation on curve
-				float t = tCurrent;
-				while (t > tEnd()) t -= tEnd();
-				vec4 currentLocation = r(t);
+				float x = tCurrent;
+				while (x > xEnd()) x -= xEnd();
+
+				vec4 currentLocation = y(x);
+
+				glBegin(GL_LINE_STRIP);
+				vector<float> circleData;
+
+				vec2 T = derivateY(x);
+				vec2 Tnorm = vec2(-T.y, T.x);
+
+				for (int i = 0; i < 360; i++) {
+					vec2 cord = vec2(2 * cosf(M_PI * i / 180.0), 2 * sinf(M_PI * i / 180.0));
+					circleData.push_back((float)cord.x+currentLocation.x);
+					circleData.push_back((float)cord.y+currentLocation.y);
+				}
+
+				circleData.push_back((float) circleData[0]);
+				circleData.push_back((float) circleData[1]);
+
 				// copy data to the GPU
 				glBindVertexArray(vaoAnimatedObject);
 				glBindBuffer(GL_ARRAY_BUFFER, vboAnimatedObject);
-				glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(float), &currentLocation, GL_DYNAMIC_DRAW);
-				if (colorLocation >= 0) glUniform4f(colorLocation, color.x, color.y, color.z, color.w);
+				glBufferData(GL_ARRAY_BUFFER, 181 * 4* sizeof(float), &circleData[0], GL_DYNAMIC_DRAW);
+				if (colorLocation >= 0) glUniform4f(colorLocation, 1, 0, 0, 1);
 
-				//glDrawArrays(GL_)
-				
+				glDrawArrays(GL_LINE_STRIP, 0, 181);
+				glEnd();
 			}
 		}
 	}
 };
 
-class CatmullRom: public Curve {
-	std::vector<float>  ts;	// parameter (knot) values
-	std::vector<vec2> points;
+class CatmullRom : public Curve {
 
-	vec4 Hermite(vec4 p0, vec4 v0, float t0, 
-				 vec4 p1, vec4 v1, float t1,
-					float t) {
-		vec4 a3 = (p0 - p1)/((t1-t0)*(t1-t0)*(t1 - t0))* 2 + (v1 + v0)/((t1-t0)*(t1 - t0));
-		vec4 a2 = (p1 - p0)/((t1 - t0)*(t1 - t0)) * 3 - (v1 + v0 * 2)/(t1-t0);
-		
-		return a3*(t-t0)*(t-t0)*(t-t0) +
-			    a2*(t-t0)*(t-t0) + 
-			         v0 * (t-t0)+ 
-			              p0;
+	vec4 Hermite(vec4 p0, vec4 v0, float x0,
+		vec4 p1, vec4 v1, float x1,
+		float x) {
+		vec4 a3 = (p0 - p1) / ((x1 - x0)*(x1 - x0)*(x1 - x0)) * 2 + (v1 + v0) / ((x1 - x0)*(x1 - x0));
+		vec4 a2 = (p1 - p0) / ((x1 - x0)*(x1 - x0)) * 3 - (v1 + v0 * 2) / (x1 - x0);
+		vec4 a1 = v0;
+
+		return a3 * (x - x0)*(x - x0)*(x - x0) +
+			a2 * (x - x0)*(x - x0) +
+			a1 * (x - x0) +
+			p0;
 	}
 
 public:
-	
+
 	void AddControlPoint(float cX, float cY) {
 
-		ts.push_back((float)wCtrlPoints.size());
+		//ts.push_back((float)wCtrlPoints.size());
 		Curve::AddControlPoint(cX, cY);
 	}
-	float tStart() {return ts[0]; }
-	float tEnd() { return ts[wCtrlPoints.size()-1]; }
+	float xStart() { return wCtrlPoints[0].x; }
+	float xEnd() { return wCtrlPoints[wCtrlPoints.size() - 1].x; }
 
-	virtual vec4 r(float t) {
+	virtual vec4 y(float x) {
 		vec4 v0, v1;
 		//0.5 * (1-t)
-		for (int i = 0; i < (signed int) wCtrlPoints.size() - 1; i++){
-			if (i <= t && t <= i+1) {
+		for (int i = 0; i < wCtrlPoints.size() - 1; i++) {
+			if (i <= x && x <= i + 1) {
 				if (i == 0) {
 					v0 = 0;
 				}
 
 				else {
-					v0 = ((wCtrlPoints[i+1] - wCtrlPoints[i])
-					+ (wCtrlPoints[i] - wCtrlPoints[i - 1])) * 0.5f;
+					v0 = ((wCtrlPoints[i + 1] - wCtrlPoints[i])//*(wCtrlPoints[i + 1].x - wCtrlPoints[i].x)*/
+						+ (wCtrlPoints[i] - wCtrlPoints[i - 1])/*/(wCtrlPoints[i].x - wCtrlPoints[i-1].x)*/) * 0.5f;
 				}
 
 				if (i == wCtrlPoints.size() - 2) {
 					v1 = 0;
 				}
 
-				else 
-					v1 = ((wCtrlPoints[i +  2] - wCtrlPoints[i + 1])
+				else
+					v1 = ((wCtrlPoints[i + 2] - wCtrlPoints[i + 1])
 						+ (wCtrlPoints[i + 1] - wCtrlPoints[i])) * 0.5f;
-				return Hermite(wCtrlPoints[i], v0, i, wCtrlPoints[i + 1], v1, i+1, t);
+
+				return Hermite(wCtrlPoints[i], v0, i, wCtrlPoints[i + 1], v1, i+1, x);
 			}
 		}
 
 	}
 };
 
-// The virtual world: collection of two objects
-Curve * curve;
-Curve * background;
+	// The virtual world: collection of two objects
+	Curve * curve;
+	Curve * background;
 
-// popup menu event handler
-void processMenuEvents(int option) {
-	delete curve;
-	switch (option) {
-	case 0: curve = new CatmullRom();
-		break;
+	// popup menu event handler
+	void processMenuEvents(int option) {
+		delete curve;
+		switch (option) {
+		case 0: curve = new CatmullRom();
+			break;
+		}
+		glutPostRedisplay();
 	}
-	glutPostRedisplay();
-}
 
-// Initialization, create an OpenGL context
-void onInitialization() {
-	// create the menu and tell glut that "processMenuEvents" will handle the events: Do not use it in your homework, because it is prohitibed by the portal
-	int menu = glutCreateMenu(processMenuEvents);
-	//add entries to our menu
-	glutAddMenuEntry("CatmullRom", 0);
-	// attach the menu to the right button
-	//glutAttachMenu(GLUT_RIGHT_BUTTON);
+	// Initialization, create an OpenGL context
+	void onInitialization() {
+		// create the menu and tell glut that "processMenuEvents" will handle the events: Do not use it in your homework, because it is prohitibed by the portal
+		int menu = glutCreateMenu(processMenuEvents);
+		//add entries to our menu
+		glutAddMenuEntry("CatmullRom", 0);
+		// attach the menu to the right button
+		//glutAttachMenu(GLUT_RIGHT_BUTTON);
 
-	glViewport(0, 0, windowWidth, windowHeight);
-	glLineWidth(2.0f);
+		glViewport(0, 0, windowWidth, windowHeight);
+		glLineWidth(2.0f);
 
-	curve = new CatmullRom();
-	background = new CatmullRom();
+		curve = new CatmullRom();
+		background = new CatmullRom();
 
-	background->SetColor(vec4(0.65, 0.33, 0, 1));
+		background->SetColor(vec4(0.65, 0.33, 0, 1));
 
-	//kezdõpontok elkészítése
-	//föld
-	float cX = 2.0f * 0 / windowWidth - 1;	// flip y axis
-	float cY = 1.0f - 2.0f * 400 / windowHeight;
-	curve->AddControlPoint(cX, cY);
-	cX = 2.0f * 600 / windowWidth - 1;	// flip y axis
-	curve->AddControlPoint(cX, cY);
-
-	//háttér
-	 cX = 2.0f * 0/ windowWidth - 1;	// flip y axis
-	 cY = 1.0f - 2.0f * 150 / windowHeight;
-	 background->AddControlPoint(cX, cY);
-
-	 cX = 2.0f * 100 / windowWidth - 1;	// flip y axis
-	 cY = 1.0f - 2.0f * 200 / windowHeight;
-	 background->AddControlPoint(cX, cY);
-
-	 cX = 2.0f * 200 / windowWidth - 1;	// flip y axis
-	 cY = 1.0f - 2.0f * 80 / windowHeight;
-	 background->AddControlPoint(cX, cY);
-
-	 cX = 2.0f * 300 / windowWidth - 1;	// flip y axis
-	 cY = 1.0f - 2.0f * 30 / windowHeight;
-	 background->AddControlPoint(cX, cY);
-
-	 cX = 2.0f * 400 / windowWidth - 1;	// flip y axis
-	 cY = 1.0f - 2.0f * 180 / windowHeight;
-	 background->AddControlPoint(cX, cY);
-
-	 cX = 2.0f * 500 / windowWidth - 1;	// flip y axis
-	 cY = 1.0f - 2.0f * 210 / windowHeight;
-	 background->AddControlPoint(cX, cY);
-
-	 cX = 2.0f * 600 / windowWidth - 1;	// flip y axis
-	 cY = 1.0f - 2.0f * 100 / windowHeight;
-	 background->AddControlPoint(cX, cY);
-
-	// create program for the GPU
-	gpuProgram.Create(vertexSource, fragmentSource, "outColor");
-}
-
-// Window has become invalid: Redraw
-void onDisplay() {
-	glClearColor(0.25, 0.750, 1, 0);							// background color 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the screen
-
-	curve->Draw();
-	background->Draw();
-	glutSwapBuffers();									// exchange the two buffers
-}
-
-// Key of ASCII code pressed
-void onKeyboard(unsigned char key, int pX, int pY) {
-	animate = !animate;			// toggle animation
-	curve->Anim();			
-	glutPostRedisplay();        // redraw
-}
-
-// Key of ASCII code released
-void onKeyboardUp(unsigned char key, int pX, int pY) {
-
-}
-
-int pickedControlPoint = -1;
-
-// Mouse click event
-void onMouse(int button, int state, int pX, int pY) {
-	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {  // GLUT_LEFT_BUTTON / GLUT_RIGHT_BUTTON and GLUT_DOWN / GLUT_UP
-		float cX = 2.0f * pX / windowWidth - 1;	// flip y axis
-		float cY = 1.0f - 2.0f * pY / windowHeight;
+		//kezdÃµpontok elkÃ©szÃ­tÃ©se
+		//fÃ¶ld
+		float cX = 2.0f * 0 / windowWidth - 1;	// flip y axis
+		float cY = 1.0f - 2.0f * 400 / windowHeight;
 		curve->AddControlPoint(cX, cY);
-		glutPostRedisplay();     // redraw
+		cX = 2.0f * 600 / windowWidth - 1;	// flip y axis
+		curve->AddControlPoint(cX, cY);
+
+		//hÃ¡ttÃ©r
+		cX = 2.0f * 0 / windowWidth - 1;	// flip y axis
+		cY = 1.0f - 2.0f * 150 / windowHeight;
+		background->AddControlPoint(cX, cY);
+
+		cX = 2.0f * 100 / windowWidth - 1;	// flip y axis
+		cY = 1.0f - 2.0f * 200 / windowHeight;
+		background->AddControlPoint(cX, cY);
+
+		cX = 2.0f * 200 / windowWidth - 1;	// flip y axis
+		cY = 1.0f - 2.0f * 80 / windowHeight;
+		background->AddControlPoint(cX, cY);
+
+		cX = 2.0f * 300 / windowWidth - 1;	// flip y axis
+		cY = 1.0f - 2.0f * 30 / windowHeight;
+		background->AddControlPoint(cX, cY);
+
+		cX = 2.0f * 400 / windowWidth - 1;	// flip y axis
+		cY = 1.0f - 2.0f * 180 / windowHeight;
+		background->AddControlPoint(cX, cY);
+
+		cX = 2.0f * 500 / windowWidth - 1;	// flip y axis
+		cY = 1.0f - 2.0f * 210 / windowHeight;
+		background->AddControlPoint(cX, cY);
+
+		cX = 2.0f * 600 / windowWidth - 1;	// flip y axis
+		cY = 1.0f - 2.0f * 100 / windowHeight;
+		background->AddControlPoint(cX, cY);
+
+		// create program for the GPU
+		gpuProgram.Create(vertexSource, fragmentSource, "outColor");
 	}
-	if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {  // GLUT_LEFT_BUTTON / GLUT_RIGHT_BUTTON and GLUT_DOWN / GLUT_UP
+
+	// Window has become invalid: Redraw
+	void onDisplay() {
+		glClearColor(0.25, 0.750, 1, 0);							// background color 
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear the screen
+
+		curve->Draw();
+		background->Draw();
+		glutSwapBuffers();									// exchange the two buffers
+	}
+
+	// Key of ASCII code pressed
+	void onKeyboard(unsigned char key, int pX, int pY) {
+		animate = !animate;			// toggle animation
+		curve->Anim();
+		glutPostRedisplay();        // redraw
+	}
+
+	// Key of ASCII code released
+	void onKeyboardUp(unsigned char key, int pX, int pY) {
+
+	}
+
+	int pickedControlPoint = -1;
+
+	// Mouse click event
+	void onMouse(int button, int state, int pX, int pY) {
+		if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {  // GLUT_LEFT_BUTTON / GLUT_RIGHT_BUTTON and GLUT_DOWN / GLUT_UP
+			float cX = 2.0f * pX / windowWidth - 1;	// flip y axis
+			float cY = 1.0f - 2.0f * pY / windowHeight;
+			curve->AddControlPoint(cX, cY);
+			glutPostRedisplay();     // redraw
+		}
+		if (button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {  // GLUT_LEFT_BUTTON / GLUT_RIGHT_BUTTON and GLUT_DOWN / GLUT_UP
+			float cX = 2.0f * pX / windowWidth - 1;	// flip y axis
+			float cY = 1.0f - 2.0f * pY / windowHeight;
+			pickedControlPoint = curve->PickControlPoint(cX, cY);
+			glutPostRedisplay();     // redraw
+		}
+		if (button == GLUT_RIGHT_BUTTON && state == GLUT_UP) {  // GLUT_LEFT_BUTTON / GLUT_RIGHT_BUTTON and GLUT_DOWN / GLUT_UP
+			pickedControlPoint = -1;
+		}
+	}
+
+	// Move mouse with key pressed
+	void onMouseMotion(int pX, int pY) {
 		float cX = 2.0f * pX / windowWidth - 1;	// flip y axis
 		float cY = 1.0f - 2.0f * pY / windowHeight;
-		pickedControlPoint = curve->PickControlPoint(cX, cY);
-		glutPostRedisplay();     // redraw
+		if (pickedControlPoint >= 0) curve->MoveControlPoint(pickedControlPoint, cX, cY);
 	}
-	if (button == GLUT_RIGHT_BUTTON && state == GLUT_UP) {  // GLUT_LEFT_BUTTON / GLUT_RIGHT_BUTTON and GLUT_DOWN / GLUT_UP
-		pickedControlPoint = -1;
-	}
-}
 
-// Move mouse with key pressed
-void onMouseMotion(int pX, int pY) {
-	float cX = 2.0f * pX / windowWidth - 1;	// flip y axis
-	float cY = 1.0f - 2.0f * pY / windowHeight;
-	if (pickedControlPoint >= 0) curve->MoveControlPoint(pickedControlPoint, cX, cY);
-}
-
-// Idle event indicating that some time elapsed: do animation here
-void onIdle() {
-	long time = glutGet(GLUT_ELAPSED_TIME); // elapsed time since the start of the program
-	tCurrent = time / 1000.0f;				// convert msec to sec
-	glutPostRedisplay();					// redraw the scene
+	// Idle event indicating that some time elapsed: do animation here
+	void onIdle() {
+		long time = glutGet(GLUT_ELAPSED_TIME); // elapsed time since the start of the program
+		tCurrent = time / 1000.0f;				// convert msec to sec
+		glutPostRedisplay();					// redraw the scene
 	}
