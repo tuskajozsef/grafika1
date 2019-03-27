@@ -1,5 +1,5 @@
 //=============================================================================================
-// Mintaprogram: Zöld háromszög. Ervenyes 2018. osztol.
+// Mintaprogram: ZÃ¶ld hÃ¡romszÃ¶g. Ervenyes 2018. osztol.
 //
 // A beadott program csak ebben a fajlban lehet, a fajl 1 byte-os ASCII karaktereket tartalmazhat, BOM kihuzando.
 // Tilos:
@@ -279,7 +279,29 @@ public:
 				glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(float), &currentLocation, GL_DYNAMIC_DRAW);
 				if (colorLocation >= 0) glUniform4f(colorLocation, color.x, color.y, color.z, color.w);
 
-				//glDrawArrays(GL_)
+				glBegin(GL_LINE_STRIP);
+				vector<float> circleData;
+
+				vec2 T = derivateY(x);
+				vec2 Tnorm = vec2(-T.y, T.x);
+
+				for (int i = 0; i < 360; i++) {
+					vec2 cord = vec2(2 * cosf(M_PI * i / 180.0), 2 * sinf(M_PI * i / 180.0));
+					circleData.push_back((float)cord.x+currentLocation.x);
+					circleData.push_back((float)cord.y+currentLocation.y);
+				}
+
+				circleData.push_back((float) circleData[0]);
+				circleData.push_back((float) circleData[1]);
+
+				// copy data to the GPU
+				glBindVertexArray(vaoAnimatedObject);
+				glBindBuffer(GL_ARRAY_BUFFER, vboAnimatedObject);
+				glBufferData(GL_ARRAY_BUFFER, 181 * 4* sizeof(float), &circleData[0], GL_DYNAMIC_DRAW);
+				if (colorLocation >= 0) glUniform4f(colorLocation, 1, 0, 0, 1);
+
+				glDrawArrays(GL_LINE_STRIP, 0, 181);
+				glEnd();
 				
 			}
 		}
@@ -371,15 +393,15 @@ void onInitialization() {
 
 	background->SetColor(vec4(0.65, 0.33, 0, 1));
 
-	//kezdõpontok elkészítése
-	//föld
+	//kezdÃµpontok elkÃ©szÃ­tÃ©se
+	//fÃ¶ld
 	float cX = 2.0f * 0 / windowWidth - 1;	// flip y axis
 	float cY = 1.0f - 2.0f * 400 / windowHeight;
 	curve->AddControlPoint(cX, cY);
 	cX = 2.0f * 600 / windowWidth - 1;	// flip y axis
 	curve->AddControlPoint(cX, cY);
 
-	//háttér
+	//hÃ¡ttÃ©r
 	 cX = 2.0f * 0/ windowWidth - 1;	// flip y axis
 	 cY = 1.0f - 2.0f * 150 / windowHeight;
 	 background->AddControlPoint(cX, cY);
