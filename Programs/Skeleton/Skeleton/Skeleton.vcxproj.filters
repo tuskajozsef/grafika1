@@ -18,7 +18,7 @@
     <ClCompile Include="framework.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Skeleton_hf.cpp">
+    <ClCompile Include="Skeleton.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
